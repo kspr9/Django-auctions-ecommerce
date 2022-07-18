@@ -1,0 +1,21 @@
+<div class="card auction-item mb-4 shadow">
+    <a href="">
+    {% if listing.image_url %}
+        <div class="card-image-wrapper">
+            <img class="card-img-top listing-img" src="{{ listing.image_url }}" alt="{{ listing.title }} photo">
+        </div>
+    {% endif %}
+        <div class="card-body">
+            <h5 class="card-title"> {{ listing.title }} </h5>
+            <div>
+                <strong>Price:</strong> {{ listing.current_price }} $
+            </div>
+            <div class="mb-2">
+                <strong>Category:</strong> {{ listing.listing_category }}
+            </div>
+            <div class="auction-list-date">
+                {{ listing.publication_date }}
+            </div>
+        </div>
+    </a>
+</div>

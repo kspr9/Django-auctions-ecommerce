@@ -1,0 +1,27 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <div class="sub-title">
+        Hi {{ user.username }}! Here are all your listings. Click on a Listing to see more info or Create a new one.
+    </div>
+    
+    <a href=""> Add a Listing</a>
+
+    <div class="user-panel">
+        <div class="card mb-3 pb-5">
+            {% include "auctions/partials/listings_group.html" with listings=selling sub_title="Selling" %}
+        </div>
+
+        <div class="card mb-3 pb-5">
+            {% include "auctions/partials/listings_group.html" with listings=sold sub_title="Sold" %}
+        </div>
+
+        <div class="card mb-3 pb-5">  
+            {% include "auctions/partials/listings_group.html" with listings=bidding sub_title="Bidding" %}
+        </div>
+
+        <div class="card pb-5">  
+            {% include "auctions/partials/listings_group.html" with listings=won sub_title="Won" %}
+        </div>
+    </div>
+{% endblock %}

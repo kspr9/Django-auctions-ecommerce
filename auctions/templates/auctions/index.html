@@ -1,7 +1,17 @@
 {% extends "auctions/layout.html" %}
 
+{% comment %}
+    
+Passed elements:
+    "listings" : all listings objects
+    will be passed on when partial html file is included
+
+{% endcomment %}
+
+
 {% block body %}
     <h2>Active Listings</h2>
 
-    TODO
+    {% include "auctions/partials/listings_group.html" with listings=listings sub_title="All Listings"%}
+    
 {% endblock %}
