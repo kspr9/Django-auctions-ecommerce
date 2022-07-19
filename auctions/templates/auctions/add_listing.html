@@ -1,0 +1,22 @@
+{% extends "auctions/layout.html" %}
+
+{% comment %}
+    
+Passed elements:
+    "form" : CreateListingsForm()
+
+{% endcomment %}
+
+
+{% block body %}
+
+    {% if message %}
+        <div><b><strong>{{ message }}</strong></b></div><br/>
+    {% endif %}
+
+    <form action="{% url 'auctions:add_listing' %}" method="POST">
+        {% csrf_token %} {{ form }}
+        <input type="submit" value="Save Listing"/>
+    </form>
+    
+{% endblock %}

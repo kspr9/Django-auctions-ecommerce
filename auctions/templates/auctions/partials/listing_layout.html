@@ -2,7 +2,7 @@
     <a href="">
     {% if listing.image_url %}
         <div class="card-image-wrapper">
-            <img class="card-img-top listing-img" src="{{ listing.image_url }}" alt="{{ listing.title }} photo">
+            <img class="card-img-top listing-page-img" src="{{ listing.image_url }}" alt="{{ listing.title }} photo">
         </div>
     {% endif %}
         <div class="card-body">
@@ -10,11 +10,14 @@
             <div>
                 <strong>Price:</strong> {{ listing.current_price }} $
             </div>
-            <div class="mb-2">
+            <div>
                 <strong>Category:</strong> {{ listing.listing_category }}
             </div>
+            <div class="mb-2">
+                <strong>Description:</strong> {{ listing.description }}
+            </div>
             <div class="auction-list-date">
-                {{ listing.publication_date }}
+                Published: {{ listing.publication_date }}
             </div>
         </div>
     </a>

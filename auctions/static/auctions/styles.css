@@ -55,7 +55,7 @@ body {
 }
 
 .listing-page-img {
-    max-width: 500px;
+    max-width: 300px;
 }
 
 /* mian button */
@@ -128,7 +128,7 @@ body {
 }
 
 .listing-img {
-    height: 200px;
+    height: 100px;
     object-fit: contain;
 }
 

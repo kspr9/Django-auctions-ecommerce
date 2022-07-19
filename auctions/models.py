@@ -2,13 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-# Categoriy choices
-CLOTHING = 'CLO'
-BROOMS = 'BRO'
-WANDS = 'WND'
-BOOKS = 'MBO'
-ITEMS = 'MAI'
-MYTHICAL = 'MYI'
 
 class User(AbstractUser):
     """User model - inherited from Django implementation"""
@@ -45,14 +38,21 @@ class Listing(models.Model):
     """
         Listing model contains all info related to one listing excluding data about bids (who bid how much etc.)
     """
+    # Categoriy choices
+    A = 'WIZARDING CLOTHING'
+    B = 'BROOMS'
+    C = 'WANDS'
+    D = 'MAGICAL BOOKS'
+    E = 'MAGICAL ITEMS'
+    F = 'MYTHICAL ITEMS'
 
     LISTING_CATEGORY_CHOICES = [
-        (CLOTHING, 'Clothing'),
-        (BROOMS, 'Brooms'),
-        (WANDS, 'Wands'),
-        (BOOKS, 'Magical Books'),
-        (ITEMS, 'Magical Items'),
-        (MYTHICAL, 'Mythical Items'),
+        (A, 'Wizarding Clothing'),
+        (B, 'Brooms'),
+        (C, 'Wands'),
+        (D, 'Magical Books'),
+        (E, 'Magical Items'),
+        (F, 'Mythical Items'),
     ]
 
     # Model fields
@@ -61,16 +61,17 @@ class Listing(models.Model):
     title = models.CharField(max_length=64, blank=False)
     description = models.TextField()
     current_price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    image_url = models.URLField(max_length=300, blank=True)
     listing_category = models.CharField(
-        max_length=3,
+        max_length=36,
         choices=LISTING_CATEGORY_CHOICES,
-        default=WANDS,
+        default=B,
     )
     publication_date = models.DateTimeField(auto_now_add=True, null=True)
-    image_url = models.URLField(max_length=300, blank=True)
     closed = models.BooleanField(default=False)
     #comments = models.ManyToManyField(Comment, blank=True, related_name="comments")
     bids = models.ManyToManyField(Bid, blank=True, related_name="bids")
+    # TODO add countime timer for auction end date
 
     class Meta:
         verbose_name = "auction"

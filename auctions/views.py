@@ -14,7 +14,7 @@ from .models import User, Listing, Bid, Comment
 ###########   FORMS   ##################################
 ########################################################
 
-class CreateListingsForm(ModelForm):
+class ListingForm(ModelForm):
   class Meta:
     model = Listing
     fields = [
@@ -126,3 +126,36 @@ def user_listings(request):
         "bidding": bidding,
         "won": won,
     })
+
+
+@login_required(login_url="auctions:login")
+def add_listing(request):
+    if request.method == "GET":
+        return render(request, "auctions/add_listing.html", {
+            "form": ListingForm(),
+        })
+    
+    if request.method == "POST":
+        form = ListingForm(request.POST)
+        seller = User.objects.get(pk=request.user.id)
+        if form.is_valid():
+            # Get all data from the form and assign into variables
+
+            listing_title = form.cleaned_data.get("title") 
+            starting_price = form.cleaned_data.get('current_price')
+            listing_description = form.cleaned_data.get('description')
+            listing_category = form.cleaned_data.get('listing_category')
+            listing_image = form.cleaned_data.get('image_url')
+
+            # saving the form data, but not committing yet to add the seller after
+            listing = form.save(commit=False)
+            listing.seller = seller
+            # final save
+            listing.save()
+            return HttpResponseRedirect(reverse("auctions:user_listings"))
+        else:
+            return render(request, "auctions/add_listing.html", {
+                "form": form,
+                "message": "Check your input data!",
+            })
+
