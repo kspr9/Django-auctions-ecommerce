@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from django.forms import ModelForm
 
-from .models import User, Listing, Bid, Comment
+from .models import User, Listing, Bid, Comment, UsersWatchlist
 
 
 ########################################################
@@ -159,3 +159,52 @@ def add_listing(request):
                 "message": "Check your input data!",
             })
 
+def listing_page(request, listing_id):
+    listing_to_render = Listing.objects.get(pk=listing_id)
+    return render(request, "auctions/listing_detail.html", {
+        "listing": listing_to_render,
+    })
+
+
+@login_required(login_url="auctions:login")
+def watchlist(request):
+    #### first we implement the add/remove to/from watchlist
+    
+    # since this route is called only after button click, we will have a request.POST data
+    if request.method == "POST":
+        # getting the listing_id from the request.POST data
+        # this name is given on the listing detail page within the add/remove watchlist form
+        listing_id = request.POST.get("listing_id")
+
+        listing = Listing.objects.get(pk=listing_id)
+        user = User.objects.get(id=request.user.id)
+
+        # add or delete listing from a watchlist
+        # if the watchlist forms button click returned on_watchlist value=True
+        # delete the item from the watchlist and set on_watchlist == False
+        if request.POST.get("on_watchlist") == "True":
+            # delete the listing from the watchlist
+            watchlist_listing = UsersWatchlist.objects.filter(
+                watchlist_user = user,
+                listing_in_watchlist = listing
+            )
+            watchlist_listing.delete()
+        # if the button returns on_watchlist value as False
+        # create a new UserWatchlist instance
+        else:
+            item_to_watchlist = UsersWatchlist(
+                watchlist_user = user,
+                listing_in_watchlist = listing
+            )
+            item_to_watchlist.save()
+        return redirect("auctions:listing_detail", listing_id)
+    
+    ### Then we handle the opening the watchlist page
+
+    # getting the User models user id of the requests user
+    watchlist_listings_ids = User.objects.get(id=request.user.id).watchlist.values_list("listing_in_watchlist")
+    watchlist_items = Listing.objects.filter(id_in=watchlist_listings_ids, closed=False)
+
+    return render(request, "auctions/watchlist.html", {
+        "watchlist_items": watchlist_items
+    })

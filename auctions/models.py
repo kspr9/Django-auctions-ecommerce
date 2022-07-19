@@ -71,7 +71,8 @@ class Listing(models.Model):
     closed = models.BooleanField(default=False)
     #comments = models.ManyToManyField(Comment, blank=True, related_name="comments")
     bids = models.ManyToManyField(Bid, blank=True, related_name="bids")
-    # TODO add countime timer for auction end date
+    
+    # TODO add coundown timer for auction end date
 
     class Meta:
         verbose_name = "auction"
@@ -96,3 +97,13 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment {self.id} on listing {self.comments_listing} made by {self.commenter}"
 
+
+class UsersWatchlist(models.Model):
+    watchlist_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    listing_in_watchlist = models.ManyToManyField(Listing, blank=True, related_name="in_watchlist")
+
+    # Forces to not have listing duplicates for one user
+    unique_together = ["listing_in_watchlist", "watchlist_user"]
+
+    def __str__(self):
+        return f"{self.listing_in_watchlist} in user {self.watchlist_user} watchlist"

@@ -1,0 +1,69 @@
+{% extends "auctions/layout.html" %}
+
+{% comment %}
+    
+Passed elements:
+    "listing" : Listing.objects.get(pk=listing_id)
+
+{% endcomment %}
+
+{% block body %}
+
+    {% if message %}
+        <div><b><strong>{{ message }}</strong></b></div><br/>
+    {% endif %}
+
+    
+
+    
+
+        <div class="card-body">
+            {% if user.is_authenticated and user.id != listing.seller.id  %}
+                {% comment %} if user is is_authenticated and not the seller show them add to watchlist button {% endcomment %}
+                <!-- --- Watchlist button --- -->
+                <form action="{% url 'auctions:watchlist' %}" method="POST">
+                    {% csrf_token %}
+                    {% if on_watchlist %}
+                    <input type="submit" class="btn btn-danger" value="Remove from Watchlist">
+                    <input type="hidden" name="on_watchlist" value="True">
+                    {% else %}
+                    <input type="submit" class="btn btn-success" value="Add to Watchlist">
+                    <input type="hidden" name="on_watchlist" value="False">
+                    {% endif %}
+                    {% comment %} passing the listing.id into the watchlist function to redirect to correct listing page {% endcomment %}
+                    <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                </form>
+            {% endif %}
+
+
+
+            <h5 class="card-title"> {{ listing.title }} </h5>
+            <div>
+                <strong>Price:</strong> {{ listing.current_price }} $
+            </div>
+    {% if user.is_authenticated %}
+        {% comment %} if user is is_authenticated allow them to make a bid {% endcomment %}
+    {% endif %}
+    {% if user.is_authenticated %}
+        {% comment %} if user is is_authenticated and seller allow them to close the listing {% endcomment %}
+    {% endif %}
+            <div>
+                <strong>Category:</strong> {{ listing.listing_category }}
+            </div>
+            <div class="mb-2">
+                <strong>Description:</strong> {{ listing.description }}
+            </div>
+            <div class="auction-list-date">
+                Published: {{ listing.publication_date }}
+            </div>
+            <div class="auction-list-date">
+                End of Auction: countdown...
+            </div>
+        </div>
+    {% if listing.image_url %}
+        <div class="card-image-wrapper">
+            <img class="card-img-top listing-page-img" src="{{ listing.image_url }}" alt="{{ listing.title }} photo">
+        </div>
+    {% endif %}
+    </div>
+{% endblock %}
