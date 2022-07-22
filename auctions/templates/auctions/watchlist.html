@@ -2,6 +2,15 @@
 
 {% block body %}
 
-{% include "auctions/partials/listings_group.html" with listings=watchlist_items sub_title="Watchlist" %}
+    {% if message %}
+        <div><b><strong>{{ message }}</strong></b></div><br/>
+    {% endif %}
+
+    <div class="watchlist-panel">
+        <div class="card mb-3 pb-5">
+            {% include "auctions/partials/listings_group.html" with listings=watchlist_items sub_title="Watchlist" %}
+        </div>
+    </div>
+
 
 {% endblock %}

@@ -21,14 +21,12 @@ Passed elements:
             {% if user.is_authenticated and user.id != listing.seller.id  %}
                 {% comment %} if user is is_authenticated and not the seller show them add to watchlist button {% endcomment %}
                 <!-- --- Watchlist button --- -->
-                <form action="{% url 'auctions:watchlist' %}" method="POST">
+                <form id="watchlist-form" action="{% url 'auctions:watchlist' %}" method="POST">
                     {% csrf_token %}
                     {% if on_watchlist %}
-                    <input type="submit" class="btn btn-danger" value="Remove from Watchlist">
-                    <input type="hidden" name="on_watchlist" value="True">
+                    <button form="watchlist-form" class="btn btn-danger" value="remove_from_watchlist" name="remove_from_watchlist">Remove from Watchlist</button>
                     {% else %}
-                    <input type="submit" class="btn btn-success" value="Add to Watchlist">
-                    <input type="hidden" name="on_watchlist" value="False">
+                    <button form="watchlist-form" class="btn btn-success" value="add_to_watchlist" name="add_to_watchlist">Add to Watchlist</button>
                     {% endif %}
                     {% comment %} passing the listing.id into the watchlist function to redirect to correct listing page {% endcomment %}
                     <input type="hidden" name="listing_id" value="{{ listing.id }}">

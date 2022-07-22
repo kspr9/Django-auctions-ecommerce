@@ -99,8 +99,8 @@ class Comment(models.Model):
 
 
 class UsersWatchlist(models.Model):
-    watchlist_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    listing_in_watchlist = models.ManyToManyField(Listing, blank=True, related_name="in_watchlist")
+    watchlist_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True,  related_name="watchlist")
+    listing_in_watchlist = models.ForeignKey(Listing, on_delete=models.CASCADE, null=True, related_name="watchlist")
 
     # Forces to not have listing duplicates for one user
     unique_together = ["listing_in_watchlist", "watchlist_user"]

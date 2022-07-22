@@ -7,7 +7,11 @@
         {% for listing in listings %}
             {% include "auctions/partials/listing_layout.html" %}
         {% empty %}
+            {% if sub_title == "Watchlist" %}
+            No auctions in your watchlist yet.
+            {% else %}
             No auctions yet.
+            {% endif %}
         {% endfor %}
     </div>
 </div>    
