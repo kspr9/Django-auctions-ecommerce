@@ -178,6 +178,7 @@ def watchlist(request):
         print(listing_id)
 
         listing = Listing.objects.get(pk=listing_id)
+        print(f'Listing that is going to be added to watchlist: {listing.id}')
         user = User.objects.get(id=request.user.id)
 
         # add or delete listing from a watchlist
@@ -217,7 +218,7 @@ def watchlist(request):
     ### Then we handle the opening the watchlist page
 
     # getting the User models user id of the requests user
-    watchlist_listings_ids = User.objects.get(id=request.user.id).watchlist.values_list("listing_in_watchlist")
+    watchlist_listings_ids = User.objects.get(id=request.user.id).watchlist.values_list("listing_in_watchlist", flat=True)
     print(f'watchlist_listings_ids: {watchlist_listings_ids}')
     watchlist_items = []
     for id in watchlist_listings_ids:
