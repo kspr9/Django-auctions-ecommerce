@@ -39,12 +39,10 @@ Passed elements:
             <div>
                 <strong>Price:</strong> {{ listing.current_price }} $
             </div>
-    {% if user.is_authenticated %}
-        {% comment %} if user is is_authenticated allow them to make a bid {% endcomment %}
-    {% endif %}
-    {% if user.is_authenticated %}
-        {% comment %} if user is is_authenticated and seller allow them to close the listing {% endcomment %}
-    {% endif %}
+    
+        {% if user.is_authenticated %}
+            {% comment %} if user is is_authenticated and seller allow them to close the listing {% endcomment %}
+        {% endif %}
             <div>
                 <strong>Category:</strong> {{ listing.listing_category }}
             </div>
@@ -57,6 +55,26 @@ Passed elements:
             <div class="auction-list-date">
                 End of Auction: countdown...
             </div>
+            <div class="list-group-item text-muted">
+                {% if bid_amount != 0 %}
+                    <small>{{ bid_amount }} bid(s) so far. {{ bid_message }}</small>
+                {% else %}
+                    <small>No bids so far.</small>
+                {% endif %}
+            </div>
+        {% if user.is_authenticated and user.id != listing.seller.id %}
+        {% comment %} if user is is_authenticated and not the seller allow them to make a bid {% endcomment %}
+            <form id="bid_form" action="{% url 'auctions:bidding' %}" method="POST" class="form-item">
+                {% csrf_token %}
+                <div class="form-item-row">
+                    <div class="col-sm-10 col-8">
+                        {{ bid_form }}
+                    </div>
+                    <input type="submit" value="Place Bid" class="btn btn-primary btn-new-blue col-sm-2 col-4">
+                    <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                </div>
+            </form>
+        {% endif %}
         </div>
     {% if listing.image_url %}
         <div class="card-image-wrapper">

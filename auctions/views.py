@@ -159,10 +159,14 @@ def add_listing(request):
                 "message": "Check your input data!",
             })
 
-def listing_page(request, listing_id):
+def listing_page(request, listing_id, message=None):
     listing_to_render = Listing.objects.get(pk=listing_id)
+
+
     return render(request, "auctions/listing_detail.html", {
         "listing": listing_to_render,
+        "bid_form": BidForm(),
+        "message": message,
     })
 
 
@@ -199,11 +203,7 @@ def watchlist(request):
         # if the button returns on_watchlist value as False
         # create a new UserWatchlist instance
         if "add_to_watchlist" in request.POST:
-            """
-            instance = UsersWatchlist.objects.create(watchlist_user=user)
             
-            instance.listing_in_watchlist.add(listing)
-            """
             item_to_watchlist = UsersWatchlist(
                 watchlist_user=user,
                 listing_in_watchlist=listing
@@ -229,3 +229,36 @@ def watchlist(request):
     return render(request, "auctions/watchlist.html", {
         "watchlist_items": watchlist_items,
     })
+
+@login_required(login_url="auctions:login")
+def bidding(request):
+    if request.method == "POST":
+        # save the form data into BidForm instance and 
+        # redirect to listing_detail with listing_id
+        form = BidForm(request.POST)
+        
+        if form.is_valid():
+            bid_price = float(form.cleaned_data["bid_price"])
+            listing_id = request.POST.get("listing_id")
+            listing = Listing.objects.get(pk=listing_id)
+            user = User.objects.get(id=request.user.id)
+
+            # don't allow for negative prices
+            if bid_price <= 0 or bid_price <= listing.current_price:
+                return render(request, "auctions/listing_detail.html", {
+                    "listing": listing,
+                    "bid_form": BidForm(),
+                    "message": "Bid cannot be negative, bid has to be more than current price"
+                })
+
+            # filter listing.bids and order by bid_price
+            highest_bid = listing.bids.all().order_by('-bid_price').first()
+            # save bid_price
+            if highest_bid is None or bid_price > highest_bid.bid_price:
+                # save the bid to listing.bids
+                new_bid = Bid(bidder=user, bid_price=bid_price)
+                new_bid.save()
+                listing.current_price = bid_price
+                listing.save()
+                return listing_page(request, listing_id)  
+    return redirect(reverse('auctions:listing_page', args=(listing_id)))
