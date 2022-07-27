@@ -159,106 +159,159 @@ def add_listing(request):
                 "message": "Check your input data!",
             })
 
-def listing_page(request, listing_id, message=None):
+def listing_page(request, listing_id):
+    print(f'listing_id coming from function arguments {listing_id}')
     listing_to_render = Listing.objects.get(pk=listing_id)
 
+    print(f'this is the request.user.id {request.user.id}')
+    
+    bid_form = BidForm()
 
-    return render(request, "auctions/listing_detail.html", {
-        "listing": listing_to_render,
-        "bid_form": BidForm(),
-        "message": message,
-    })
+    def check_on_watchlist():
+        user = User.objects.get(id=request.user.id)
+        ### handle on_watchlist variable
+        watchlist_item = UsersWatchlist.objects.filter(
+            watchlist_user = user,
+            listing_in_watchlist = listing_id
+            ).first()
+            
+        if watchlist_item is not None:
+            on_watchlist = True
+        else:
+            on_watchlist = False
+        
+        return on_watchlist
+
+    ### returns listing page with bid form and on_watchlist if user is authenticated
+    if request.method == "GET":
+        print(f'this is the request.user.id inside watchlist implementation {request.user.id}')
+        
+        on_watchlist = check_on_watchlist()
+
+        return render(request, "auctions/listing_page.html", {
+            "listing": listing_to_render,
+            "bid_form": bid_form,
+            "on_watchlist": on_watchlist
+            })
+
+    ### Only POST methods can be called by authenticated user
+        # route is called after button click, we will have a request.POST data
+    if request.method == "POST": # checking if user.is_authenticated done on template side
+        user = request.user
+        print(f'User of request.post is {user}')
+
+            # could use the listing_id from function arguments, 
+            # but this implementation was inherited when structure was different
+        listing_id = request.POST.get("listing_id")
+        print(f'listing_id coming from request.POST.get {listing_id}')
+
+        listing = Listing.objects.get(pk=listing_id)
+        print(f'Listing that is going to be added to watchlist: {listing.id}')
+
+        user = User.objects.get(id=request.user.id)
+        print(f'User of User object is {user}')
+
+        
+
+        ### add or delete listing from a watchlist
+        
+            # if the watchlist forms button click returned on_watchlist value=True
+            # delete the item from the watchlist and set on_watchlist == False
+        if "watchlist-form" in request.POST:
+            
+                # if listing removed from watchlist, 
+                # delete the listing from watchlist 
+            if "remove_from_watchlist" in request.POST:
+                # delete the listing from the watchlist
+                watchlist_listing = UsersWatchlist.objects.get(
+                    watchlist_user = user,
+                    listing_in_watchlist = listing
+                )
+                watchlist_listing.delete()
+                
+                # if the button returns on_watchlist value as False
+                # create a new UserWatchlist instance
+            if "add_to_watchlist" in request.POST:
+                
+                item_to_watchlist = UsersWatchlist(
+                    watchlist_user=user,
+                    listing_in_watchlist=listing
+                )
+                item_to_watchlist.save()
+
+            on_watchlist = check_on_watchlist()
+            
+            return render(request, "auctions/listing_page.html", {
+                "listing": listing,
+                "bid_form": bid_form,
+                "on_watchlist": on_watchlist
+                }) 
+
+
+        ### perform the bidding
+            # save the form data into BidForm instance and 
+            # redirect to listing_detail with listing_id
+        if "bid-form" in request.POST:
+            form = BidForm(request.POST)
+            
+            if form.is_valid():
+                bid_price = float(form.cleaned_data["bid_price"])
+                #listing_id = request.POST.get("listing_id")
+                listing = listing_to_render
+                user = user
+
+                # don't allow for negative prices
+                if bid_price <= 0 or bid_price <= listing.current_price:
+                    print(f'bid_price: {bid_price} <= listing.current_price: {listing.current_price}')
+                    message = "Bid cannot be negative and bid has to be more than current price"
+
+                # filter listing.bids and order by bid_price
+                highest_bid = listing.bids.all().order_by('-bid_price').first()
+                print(f'highest bid: {highest_bid}')
+                # save bid_price
+                if highest_bid is None or bid_price > highest_bid.bid_price:
+                    # save the bid to listing.bids
+                    new_bid = Bid(bidder=user, bid_price=bid_price)
+                    new_bid.save()
+                    # add the new bid to bids of a listing
+                    listing.bids.add(new_bid)
+                    # update the current price of a listing
+                    listing.current_price = bid_price
+                    listing.save()
+                    message = "You've successfully made the highest bid"
+
+            on_watchlist = check_on_watchlist()
+
+            return render(request, "auctions/listing_page.html", {
+                "listing": listing,
+                "bid_form": form,
+                "message": message,
+                "on_watchlist": on_watchlist
+                })
+
+    # count the bids made to a listing
+
+
+@login_required(login_url="auctions:login")
+def bidding(request):
+    pass
 
 
 @login_required(login_url="auctions:login")
 def watchlist(request):
-    #### first we implement the add/remove to/from watchlist
-    
-    # since this route is called only after button click, we will have a request.POST data
-    if request.method == "POST":
-        # getting the listing_id from the request.POST data
-        # this name is given on the listing detail page within the add/remove watchlist form
-        listing_id = request.POST.get("listing_id")
-        print(listing_id)
-
-        listing = Listing.objects.get(pk=listing_id)
-        print(f'Listing that is going to be added to watchlist: {listing.id}')
-        user = User.objects.get(id=request.user.id)
-
-        # add or delete listing from a watchlist
-        # if the watchlist forms button click returned on_watchlist value=True
-        # delete the item from the watchlist and set on_watchlist == False
-        if "remove_from_watchlist" in request.POST:
-            # delete the listing from the watchlist
-            watchlist_listing = UsersWatchlist.objects.get(
-                watchlist_user = user,
-                listing_in_watchlist = listing
-            )
-            watchlist_listing.delete()
-            on_watchlist = False
-            return render(request, "auctions/listing_detail.html", {
-                "on_watchlist": on_watchlist,
-                "listing": listing
-            })
-        # if the button returns on_watchlist value as False
-        # create a new UserWatchlist instance
-        if "add_to_watchlist" in request.POST:
-            
-            item_to_watchlist = UsersWatchlist(
-                watchlist_user=user,
-                listing_in_watchlist=listing
-            )
-            item_to_watchlist.save()
-            on_watchlist = True
-            return render(request, "auctions/listing_detail.html", {
-                    "on_watchlist": on_watchlist,
-                    "listing": listing
-                })
-    
     ### Then we handle the opening the watchlist page
 
     # getting the User models user id of the requests user
     watchlist_listings_ids = User.objects.get(id=request.user.id).watchlist.values_list("listing_in_watchlist", flat=True)
-    print(f'watchlist_listings_ids: {watchlist_listings_ids}')
+    #print(f'watchlist_listings_ids: {watchlist_listings_ids}')
     watchlist_items = []
     for id in watchlist_listings_ids:
-        print(f'IDs in watchlist_listings_ids (for loop): {id}')
+        #print(f'IDs in watchlist_listings_ids (for loop): {id}')
         listing_to_watchlist = Listing.objects.get(id=id)
         watchlist_items.append(listing_to_watchlist)
-        print(f'watchlist_items after filtering Listing objects with the id: {watchlist_items}')
+        #print(f'watchlist_items after filtering Listing objects with the id: {watchlist_items}')
     return render(request, "auctions/watchlist.html", {
         "watchlist_items": watchlist_items,
     })
 
-@login_required(login_url="auctions:login")
-def bidding(request):
-    if request.method == "POST":
-        # save the form data into BidForm instance and 
-        # redirect to listing_detail with listing_id
-        form = BidForm(request.POST)
-        
-        if form.is_valid():
-            bid_price = float(form.cleaned_data["bid_price"])
-            listing_id = request.POST.get("listing_id")
-            listing = Listing.objects.get(pk=listing_id)
-            user = User.objects.get(id=request.user.id)
 
-            # don't allow for negative prices
-            if bid_price <= 0 or bid_price <= listing.current_price:
-                return render(request, "auctions/listing_detail.html", {
-                    "listing": listing,
-                    "bid_form": BidForm(),
-                    "message": "Bid cannot be negative, bid has to be more than current price"
-                })
-
-            # filter listing.bids and order by bid_price
-            highest_bid = listing.bids.all().order_by('-bid_price').first()
-            # save bid_price
-            if highest_bid is None or bid_price > highest_bid.bid_price:
-                # save the bid to listing.bids
-                new_bid = Bid(bidder=user, bid_price=bid_price)
-                new_bid.save()
-                listing.current_price = bid_price
-                listing.save()
-                return listing_page(request, listing_id)  
-    return redirect(reverse('auctions:listing_page', args=(listing_id)))
