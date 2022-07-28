@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 
 from django.forms import ModelForm
+from django import forms
 
 from .models import User, Listing, Bid, Comment, UsersWatchlist
 
@@ -36,6 +37,9 @@ class CommentForm(ModelForm):
   class Meta:
     model = Comment
     fields = ["comment"]
+    widgets = {
+          'comment': forms.Textarea(attrs={'rows':3, 'cols':35}),
+        }
 
 
 ########################################################
@@ -160,13 +164,14 @@ def add_listing(request):
             })
 
 def listing_page(request, listing_id):
-    print(f'listing_id coming from function arguments {listing_id}')
+    #print(f'listing_id coming from function arguments {listing_id}')
     listing_to_render = Listing.objects.get(pk=listing_id)
 
-    print(f'this is the request.user.id {request.user.id}')
+    #print(f'this is the request.user.id {request.user.id}')
     
     bid_form = BidForm()
-
+    comment_form = CommentForm()
+    
 
     ######  Helpers ########################################
 
@@ -191,16 +196,15 @@ def listing_page(request, listing_id):
     if request.user.is_authenticated:
         
         user = request.user
-        print(f'User of request.post is {user}')
+        #print(f'User of request.post is {user}')
 
-        listing = Listing.objects.get(pk=listing_id)
-        print(f'Listing that is going to be added to watchlist: {listing.id}')
+        listing = listing_to_render
+        #print(f'Listing that is going to be added to watchlist: {listing.id}')
 
-        user = User.objects.get(id=request.user.id)
-        print(f'User of User object is {user}')
         
         message = None
         
+
         ### add or delete listing from a watchlist
             # if the watchlist forms button click returned on_watchlist value=True
             # delete the item from the watchlist and set on_watchlist == False
@@ -226,8 +230,6 @@ def listing_page(request, listing_id):
                 )
                 item_to_watchlist.save()
 
-            on_watchlist = check_on_watchlist()
-
 
         ### closing and opening an auction
             # checking for user == seller done on template side
@@ -239,15 +241,37 @@ def listing_page(request, listing_id):
             if "close_auction" in request.POST:
                 # close the auction
                 listing.closed = True
+                if listing.bids.all().order_by('-bid_price').first() is not None:
+                    highest_bid = highest_bid = listing.bids.all().order_by('-bid_price').first()
+                    highest_bidder = highest_bid.bidder
+                    listing.winner = highest_bidder
+                    
+                else:
+                    highest_bidder = None
                 listing.save()
 
                 # if listing is opened
                 # change listing.close to False
             if "open_auction" in request.POST:
                 listing.closed = False
+                if listing.winner is not None:
+                    listing.winner = None
                 listing.save()
-                
+        
 
+        ### Handle commenting
+            # save the comment form data into a Comment model
+            # redirect back to listing page
+        if "comment-form" in request.POST:
+            form = CommentForm(request.POST)
+            if form.is_valid():
+                comment = str(form.cleaned_data["comment"])
+                
+                new_comment = Comment()
+                new_comment.comments_listing = listing
+                new_comment.commenter = user
+                new_comment.comment = comment
+                new_comment.save()
 
         ### perform the bidding
             # save the form data into BidForm instance and 
@@ -263,12 +287,12 @@ def listing_page(request, listing_id):
 
                 # don't allow for negative prices
                 if bid_price <= 0 or bid_price <= listing.current_price:
-                    print(f'bid_price: {bid_price} <= listing.current_price: {listing.current_price}')
+                    #print(f'bid_price: {bid_price} <= listing.current_price: {listing.current_price}')
                     message = "Bid cannot be negative and bid has to be more than current price"
 
                 # filter listing.bids and order by bid_price
                 highest_bid = listing.bids.all().order_by('-bid_price').first()
-                print(f'highest bid: {highest_bid}')
+                #print(f'highest bid: {highest_bid}')
                 # save bid_price
                 if highest_bid is None or bid_price > highest_bid.bid_price:
                     # save the bid to listing.bids
@@ -281,29 +305,61 @@ def listing_page(request, listing_id):
                     listing.save()
                     message = "You've successfully made the highest bid"
 
+        ### handle highest bidder messages
+        highest_bid = listing.bids.all().order_by('-bid_price').first()
+        #print(f'highest bid: {highest_bid}')
+        if highest_bid is not None:
+            highest_bidder = highest_bid.bidder
+            #print(f'highest bidder >> {highest_bidder}')
+        else:
+            highest_bidder = None
+            #print(f'highest bidder >> {highest_bidder}')
+        
+        if highest_bidder is not None:
+            if highest_bidder.id == request.user.id:
+                bids_message = "Your bid is the highest bid"
+            else:
+                bids_message = "Highest bid made by " + highest_bidder.username
+        else:
+            bids_message = None
+
+
+        ### handle winner announcement
+        if listing.closed == True and request.user == listing.winner:
+            bids_message = "You have won the auction!"
+
+
+        ### handle comments on a listing page
+        if Comment.objects.filter(comments_listing=listing) is not None:
+            comments = Comment.objects.filter(comments_listing=listing)
+        else:
+            comments = None
 
         on_watchlist = check_on_watchlist() ### need user auth
-        
-        if message is not None:
-            context = {
-                "listing": listing,
-                "bid_form": bid_form,
-                "on_watchlist": on_watchlist,
-                "message": message,
-                }
-        else:
-            context = {
-                "listing": listing,
-                "bid_form": bid_form,
-                "on_watchlist": on_watchlist
-                }
+        bids_count = listing_to_render.bids.count()
+        print(f' >>  Bids count: {bids_count}')
 
+        context = {
+            "listing": listing,
+            "bid_form": bid_form,
+            "on_watchlist": on_watchlist,
+            "bids_count": bids_count,
+            "bids_message": bids_message,
+            "message": message,
+            "comment_form": comment_form,
+            "comments": comments,
+            }
+        
         return render(request, "auctions/listing_page.html", context)
         
     # count the bids made to a listing
+    bids_count = listing_to_render.bids.count()
+    bids_message = None
 
     return render(request, "auctions/listing_page.html", {
-        "listing": listing_to_render
+        "listing": listing_to_render,
+        "bids_count": bids_count,
+        "bids_message": bids_message,
     })
 
 @login_required(login_url="auctions:login")

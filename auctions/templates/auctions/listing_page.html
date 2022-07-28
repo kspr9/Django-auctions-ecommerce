@@ -33,14 +33,18 @@ Passed elements:
                 </form>
             {% endif %}
 
-
+            {% if listing.image_url %}
+                <div class="card-image-wrapper">
+                    <img class="card-img-top listing-page-img" src="{{ listing.image_url }}" alt="{{ listing.title }} photo">
+                </div>
+            {% endif %}
 
             <h5 class="card-title"> {{ listing.title }} </h5>
             <div>
-                <strong>Seller:</strong> {{ listing.seller }} $
+                <strong>Seller:</strong> {{ listing.seller }}
             </div>
             <div>
-                <strong>Price:</strong> {{ listing.current_price }}
+                <strong>Price:</strong> {{ listing.current_price }} €
             </div>
     
         
@@ -56,15 +60,18 @@ Passed elements:
             <div class="auction-list-date">
                 End of Auction: countdown...
             </div>
+    
             <div class="list-group-item text-muted w-25 p-3">
-                {% comment %}
+                
+                
                 {% if bids_count != 0 %}
-                    <small>{{ bids_count }} bid(s) so far. {{ bid_message }}</small>
+                    <small>{{ bids_count }} bid(s) so far. {{ bids_message }}</small>
                 {% else %}
                     <small>No bids so far.</small>
                 {% endif %}
-                {% endcomment %}
+                
             </div>
+
         {% if user.id != listing.seller.id %}
         {% comment %} if user is is_authenticated and not the seller allow them to make a bid {% endcomment %}
             {% if listing.closed == False %}
@@ -82,6 +89,10 @@ Passed elements:
                     This auction has been closed
                 </div>
             {% endif %}
+        {% elif listing.closed == True %}
+        <div>
+            This auction has been closed
+        </div>
         {% endif %}
         {% if user.id == listing.seller.id %}
             {% comment %} if user is is_authenticated and seller allow them to close the listing {% endcomment %}
@@ -97,10 +108,33 @@ Passed elements:
             </form>
         {% endif %}
         </div>
-    {% if listing.image_url %}
-        <div class="card-image-wrapper">
-            <img class="card-img-top listing-page-img" src="{{ listing.image_url }}" alt="{{ listing.title }} photo">
+        {% if listing.closed != True and user.is_authenticated %}
+        <div>
+            <form id="comment-form" action="{% url 'auctions:listing_page' listing.id %}" method="POST" class="form-item">
+                {% csrf_token %}
+                <div class="form-item-row">
+                    <div class="col-sm-10 col-8">
+                        {{ comment_form }}
+                    </div>
+                    <input type="submit" name="comment-form" value="Comment" class="btn btn-primary btn-new-blue col-sm-2 col-4">
+                </div>
+            </form>
         </div>
-    {% endif %}
+        {% endif %}
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="list-group-item text-muted w-25 p-3">
+                    <div>
+                        <strong>Commenter:</strong> {{ comment.commenter }}
+                    </div>
+                    <div>
+                        <strong>Comment:</strong> {{ comment.comment }}
+                    </div>
+                    <div class="auction-list-date">
+                        <strong>Date:</strong> {{ comment.comment_date }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
     </div>
 {% endblock %}
