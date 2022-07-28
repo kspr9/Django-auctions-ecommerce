@@ -29,7 +29,6 @@ Passed elements:
                     <button form="watchlist-form" class="btn btn-success" value="add_to_watchlist" name="add_to_watchlist">Add to Watchlist</button>
                     {% endif %}
                     {% comment %} passing the listing.id into the watchlist function to redirect to correct listing page {% endcomment %}
-                    <input type="hidden" name="listing_id" value="{{ listing.id }}">
                     <input type="hidden" name="watchlist-form">
                 </form>
             {% endif %}
@@ -66,31 +65,34 @@ Passed elements:
                 {% endif %}
                 {% endcomment %}
             </div>
-        {% if user.is_authenticated and user.id != listing.seller.id %}
+        {% if user.id != listing.seller.id %}
         {% comment %} if user is is_authenticated and not the seller allow them to make a bid {% endcomment %}
-            <form id="bid_form" action="{% url 'auctions:listing_page' listing.id %}" method="POST" class="form-item">
-                {% csrf_token %}
-                <div class="form-item-row">
-                    <div class="col-sm-10 col-8">
-                        {{ bid_form }}
+            {% if listing.closed == False %}
+                <form id="bid_form" action="{% url 'auctions:listing_page' listing.id %}" method="POST" class="form-item">
+                    {% csrf_token %}
+                    <div class="form-item-row">
+                        <div class="col-sm-10 col-8">
+                            {{ bid_form }}
+                        </div>
+                        <input type="submit" name="bid-form" value="Place Bid" class="btn btn-primary btn-new-blue col-sm-2 col-4">
                     </div>
-                    <input type="submit" name="bid-form" value="Place Bid" class="btn btn-primary btn-new-blue col-sm-2 col-4">
-                    <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                </form>
+            {% elif listing.closed == True %}
+                <div>
+                    This auction has been closed
                 </div>
-            </form>
+            {% endif %}
         {% endif %}
-        {% if user.is_authenticated and user.id == listing.seller.id %}
+        {% if user.id == listing.seller.id %}
             {% comment %} if user is is_authenticated and seller allow them to close the listing {% endcomment %}
             <!-- --- Close the auction & announce the winner; open the listing again --- -->
             <form id="close-form" action="{% url 'auctions:listing_page' listing.id %}" method="POST">
                 {% csrf_token %}
-                {% if listing.closed %}
-                <button form="close-form" class="btn btn-danger" value="open-auction" name="open_auction">Open Auction</button>
-                {% else %}
-                <button form="close-form" class="btn btn-success" value="close-auction" name="close_auction">Close Auction</button>
+                {% if listing.closed == True %}
+                <button form="close-form" class="btn btn-outline-success" value="open-auction" name="open_auction">Open Auction</button>
+                {% elif listing.closed == False %}
+                <button form="close-form" class="btn btn-outline-danger" value="close-auction" name="close_auction">Close Auction</button>
                 {% endif %}
-                {% comment %} passing the listing.id into the close-form function to redirect to correct listing page {% endcomment %}
-                <input type="hidden" name="listing_id" value="{{ listing.id }}">
                 <input type="hidden" name="close-form">
             </form>
         {% endif %}

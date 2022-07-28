@@ -184,20 +184,8 @@ def listing_page(request, listing_id):
             on_watchlist = False
         
         return on_watchlist
-    
-    def check_auction_closed():
-        user = User.objects.get(id=request.user.id)
-        listing = listing_to_render
-        
-        if listing.closed == True:
-            listing_closed = True
-        else:
-            listing_closed = False
 
     ######################################################
-
-
-
 
     ### returns listing page with bid form and on_watchlist if user is authenticated
     if request.user.is_authenticated:
@@ -212,10 +200,7 @@ def listing_page(request, listing_id):
         print(f'User of User object is {user}')
         
         message = None
-        #listing_closed = listing.closed
         
-
-
         ### add or delete listing from a watchlist
             # if the watchlist forms button click returned on_watchlist value=True
             # delete the item from the watchlist and set on_watchlist == False
@@ -251,14 +236,14 @@ def listing_page(request, listing_id):
             
                 # if listing is closed, 
                 # change listing.closed to True 
-            if "close-auction" in request.POST:
+            if "close_auction" in request.POST:
                 # close the auction
                 listing.closed = True
                 listing.save()
 
                 # if listing is opened
                 # change listing.close to False
-            if "open-auction" in request.POST:
+            if "open_auction" in request.POST:
                 listing.closed = False
                 listing.save()
                 
