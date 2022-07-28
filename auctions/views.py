@@ -167,6 +167,9 @@ def listing_page(request, listing_id):
     
     bid_form = BidForm()
 
+
+    ######  Helpers ########################################
+
     def check_on_watchlist():
         user = User.objects.get(id=request.user.id)
         ### handle on_watchlist variable
@@ -181,40 +184,39 @@ def listing_page(request, listing_id):
             on_watchlist = False
         
         return on_watchlist
+    
+    def check_auction_closed():
+        user = User.objects.get(id=request.user.id)
+        listing = listing_to_render
+        
+        if listing.closed == True:
+            listing_closed = True
+        else:
+            listing_closed = False
+
+    ######################################################
+
+
+
 
     ### returns listing page with bid form and on_watchlist if user is authenticated
-    if request.method == "GET":
-        print(f'this is the request.user.id inside watchlist implementation {request.user.id}')
+    if request.user.is_authenticated:
         
-        on_watchlist = check_on_watchlist()
-
-        return render(request, "auctions/listing_page.html", {
-            "listing": listing_to_render,
-            "bid_form": bid_form,
-            "on_watchlist": on_watchlist
-            })
-
-    ### Only POST methods can be called by authenticated user
-        # route is called after button click, we will have a request.POST data
-    if request.method == "POST": # checking if user.is_authenticated done on template side
         user = request.user
         print(f'User of request.post is {user}')
-
-            # could use the listing_id from function arguments, 
-            # but this implementation was inherited when structure was different
-        listing_id = request.POST.get("listing_id")
-        print(f'listing_id coming from request.POST.get {listing_id}')
 
         listing = Listing.objects.get(pk=listing_id)
         print(f'Listing that is going to be added to watchlist: {listing.id}')
 
         user = User.objects.get(id=request.user.id)
         print(f'User of User object is {user}')
-
         
+        message = None
+        #listing_closed = listing.closed
+        
+
 
         ### add or delete listing from a watchlist
-        
             # if the watchlist forms button click returned on_watchlist value=True
             # delete the item from the watchlist and set on_watchlist == False
         if "watchlist-form" in request.POST:
@@ -240,12 +242,26 @@ def listing_page(request, listing_id):
                 item_to_watchlist.save()
 
             on_watchlist = check_on_watchlist()
+
+
+        ### closing and opening an auction
+            # checking for user == seller done on template side
+            # close button not visible if user != seller
+        if "close-form" in request.POST:
             
-            return render(request, "auctions/listing_page.html", {
-                "listing": listing,
-                "bid_form": bid_form,
-                "on_watchlist": on_watchlist
-                }) 
+                # if listing is closed, 
+                # change listing.closed to True 
+            if "close-auction" in request.POST:
+                # close the auction
+                listing.closed = True
+                listing.save()
+
+                # if listing is opened
+                # change listing.close to False
+            if "open-auction" in request.POST:
+                listing.closed = False
+                listing.save()
+                
 
 
         ### perform the bidding
@@ -280,17 +296,30 @@ def listing_page(request, listing_id):
                     listing.save()
                     message = "You've successfully made the highest bid"
 
-            on_watchlist = check_on_watchlist()
 
-            return render(request, "auctions/listing_page.html", {
+        on_watchlist = check_on_watchlist() ### need user auth
+        
+        if message is not None:
+            context = {
                 "listing": listing,
-                "bid_form": form,
+                "bid_form": bid_form,
+                "on_watchlist": on_watchlist,
                 "message": message,
+                }
+        else:
+            context = {
+                "listing": listing,
+                "bid_form": bid_form,
                 "on_watchlist": on_watchlist
-                })
+                }
 
+        return render(request, "auctions/listing_page.html", context)
+        
     # count the bids made to a listing
 
+    return render(request, "auctions/listing_page.html", {
+        "listing": listing_to_render
+    })
 
 @login_required(login_url="auctions:login")
 def bidding(request):

@@ -44,9 +44,7 @@ Passed elements:
                 <strong>Price:</strong> {{ listing.current_price }}
             </div>
     
-        {% if user.is_authenticated %}
-            {% comment %} if user is is_authenticated and seller allow them to close the listing {% endcomment %}
-        {% endif %}
+        
             <div>
                 <strong>Category:</strong> {{ listing.listing_category }}
             </div>
@@ -79,6 +77,21 @@ Passed elements:
                     <input type="submit" name="bid-form" value="Place Bid" class="btn btn-primary btn-new-blue col-sm-2 col-4">
                     <input type="hidden" name="listing_id" value="{{ listing.id }}">
                 </div>
+            </form>
+        {% endif %}
+        {% if user.is_authenticated and user.id == listing.seller.id %}
+            {% comment %} if user is is_authenticated and seller allow them to close the listing {% endcomment %}
+            <!-- --- Close the auction & announce the winner; open the listing again --- -->
+            <form id="close-form" action="{% url 'auctions:listing_page' listing.id %}" method="POST">
+                {% csrf_token %}
+                {% if listing.closed %}
+                <button form="close-form" class="btn btn-danger" value="open-auction" name="open_auction">Open Auction</button>
+                {% else %}
+                <button form="close-form" class="btn btn-success" value="close-auction" name="close_auction">Close Auction</button>
+                {% endif %}
+                {% comment %} passing the listing.id into the close-form function to redirect to correct listing page {% endcomment %}
+                <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                <input type="hidden" name="close-form">
             </form>
         {% endif %}
         </div>

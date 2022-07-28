@@ -71,6 +71,11 @@ class Listing(models.Model):
     closed = models.BooleanField(default=False)
     #comments = models.ManyToManyField(Comment, blank=True, related_name="comments")
     bids = models.ManyToManyField(Bid, blank=True, related_name="bids")
+    winner = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        blank=True, null=True,
+        related_name="winner")
     
     # TODO add coundown timer for auction end date
 
