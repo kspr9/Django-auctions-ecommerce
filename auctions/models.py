@@ -53,7 +53,7 @@ class Listing(models.Model):
         (D, 'Magical Books'),
         (E, 'Magical Items'),
         (F, 'Mythical Items'),
-    ]
+        ]
 
     # Model fields
     # auto: listing_id

@@ -7,7 +7,15 @@
         {% for listing in listings %}
             {% include "auctions/partials/listing_layout.html" %}
         {% empty %}
-            {% if sub_title == "Watchlist" %}
+            {% if sub_title == "Selling" %}
+            You have not created any auctions yet.
+            {% elif sub_title == "Sold" %}
+            You have not sold any listings yet.
+            {% elif sub_title == "Bidding" %}
+            You have not made any bids yet
+            {% elif sub_title == "Won" %}
+            No auctions won yet.
+            {% elif sub_title == "Watchlist" %}
             No auctions in your watchlist yet.
             {% else %}
             No auctions yet.

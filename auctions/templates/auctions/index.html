@@ -3,15 +3,22 @@
 {% comment %}
     
 Passed elements:
-    "listings" : all listings objects
+    "listings" : all open listings objects
     will be passed on when partial html file is included
 
 {% endcomment %}
 
 
 {% block body %}
-    <h2>Active Listings</h2>
+    <h2>All Listings</h2>
+    
+    <div class="card mb-3 pb-5">
+        {% include "auctions/partials/listings_group.html" with listings=listings sub_title="Open Listings"%}
+    </div>
+    
 
-    {% include "auctions/partials/listings_group.html" with listings=listings sub_title="All Listings"%}
+    <div class="card mb-3 pb-5">
+        {% include "auctions/partials/listings_group.html" with listings=closed_listings sub_title="Past Listings"%}
+    </div>
     
 {% endblock %}

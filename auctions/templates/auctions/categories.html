@@ -1,0 +1,20 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <div class="sub-title">
+        Here you can browse through all our various categories
+    </div>
+
+    {% if message %}
+        <div><b><strong>{{ message }}</strong></b></div><br/>
+    {% endif %}
+
+    <div class="category-panel">
+        {% for category, slug in categories %}
+            <div class="card auction-item mb-4 shadow">
+                <a href="{% url 'auctions:listings_in_category' slug %}"> {{ category }} </a>
+            </div>
+        {% endfor %}
+        
+    </div>
+{% endblock %}

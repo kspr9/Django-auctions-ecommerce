@@ -10,6 +10,8 @@ from django import forms
 
 from .models import User, Listing, Bid, Comment, UsersWatchlist
 
+from slugify import slugify
+
 
 ########################################################
 ###########   FORMS   ##################################
@@ -48,10 +50,14 @@ class CommentForm(ModelForm):
 
 
 def index(request):
+    
+    open_listings = Listing.objects.filter(closed=False).order_by("-publication_date").all()
+    closed_listings = Listing.objects.filter(closed=True).order_by("-publication_date").all()
+    
     return render(request, "auctions/index.html", {
-        "listings": Listing.objects.order_by("-publication_date").all()
+        "listings": open_listings,
+        "closed_listings": closed_listings,
     })
-
 
 def login_view(request):
     if request.method == "POST":
@@ -105,6 +111,52 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
+########################################################
+###########   AUCTION VIEWS   ##########################
+########################################################
+
+
+def categories(request):
+    categories = Listing.LISTING_CATEGORY_CHOICES
+    
+    ## Creates a list with category name and associated slug 
+    # to handle correct url path
+    cats = []
+    for cat in categories:
+        #print(f'cat in categories: {cat}')
+        cats.append((cat[1], slugify(cat[1])))
+    #print(cats)
+    return render(request, "auctions/categories.html", {"categories":cats})
+
+def category(request, category_slug):
+    categories_list = Listing.LISTING_CATEGORY_CHOICES
+    
+    ## Creates a list with listing_category key, name and slug
+    categories_in_tuple = []
+    for cat in categories_list:
+        #print(f'cat in categories: {cat}')
+        categories_in_tuple.append((cat[0], cat[1], slugify(cat[1])))
+    #print(categories_in_tuple)
+    
+    ## Matches the slug with the key
+    for cat_tuple in categories_in_tuple:
+        if category_slug == cat_tuple[2]:
+            found_cat = cat_tuple[0]
+            sub_title = cat_tuple[1]
+            break
+    
+    ## Selects all listings with found key
+    listings_in_category = Listing.objects.filter(listing_category=found_cat).all()
+
+    return render(request, "auctions/category.html", {
+        "listings": listings_in_category,
+        "category": sub_title,
+    })
+
+
+
+### Displays all users listing + there is a button to add a listing
+
 @login_required(login_url="auctions:login")
 def user_listings(request):
     """User Listings view: shows all listings that user:
@@ -125,7 +177,7 @@ def user_listings(request):
     # get all listings won by user
     won = Listing.objects.filter(closed=True, winner=request.user.id).order_by("-publication_date").all()
     
-    return render(request, "auctions/user_listings.html", {
+    return render(request, "auctions/user_panel.html", {
         "selling": user_listings,
         "sold": sold_listings,
         "bidding": bidding_on_listing,
@@ -133,6 +185,7 @@ def user_listings(request):
     })
 
 
+### Allows to add a new listing
 @login_required(login_url="auctions:login")
 def add_listing(request):
     if request.method == "GET":
@@ -164,6 +217,11 @@ def add_listing(request):
                 "message": "Check your input data!",
             })
 
+
+### Defines what user can see on a listing detail page
+#   Like add listing to a watchlist, bid and comment if user is logged in
+#   If user is not logged in only basic listing info is displayed
+
 def listing_page(request, listing_id):
     #print(f'listing_id coming from function arguments {listing_id}')
     listing_to_render = Listing.objects.get(pk=listing_id)
@@ -192,7 +250,7 @@ def listing_page(request, listing_id):
         return on_watchlist
 
     ######################################################
-
+    ### Handles extra features if user is logged in
     ### returns listing page with bid form and on_watchlist if user is authenticated
     if request.user.is_authenticated:
         
@@ -232,7 +290,7 @@ def listing_page(request, listing_id):
                 item_to_watchlist.save()
 
 
-        ### closing and opening an auction
+        ### closing and opening an auction (for the owner of a listing only)
             # checking for user == seller done on template side
             # close button not visible if user != seller
         if "close-form" in request.POST:
@@ -274,7 +332,7 @@ def listing_page(request, listing_id):
                 new_comment.comment = comment
                 new_comment.save()
 
-        ### perform the bidding
+        ### Perform the bidding (is user != seller)
             # save the form data into BidForm instance and 
             # redirect to listing_detail with listing_id
         if "bid-form" in request.POST:
@@ -338,7 +396,7 @@ def listing_page(request, listing_id):
 
         on_watchlist = check_on_watchlist() ### need user auth
         bids_count = listing_to_render.bids.count()
-        print(f' >>  Bids count: {bids_count}')
+        #print(f' >>  Bids count: {bids_count}')
 
         context = {
             "listing": listing,
@@ -362,10 +420,6 @@ def listing_page(request, listing_id):
         "bids_count": bids_count,
         "bids_message": bids_message,
     })
-
-@login_required(login_url="auctions:login")
-def bidding(request):
-    pass
 
 
 @login_required(login_url="auctions:login")
