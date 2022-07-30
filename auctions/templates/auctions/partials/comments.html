@@ -1,0 +1,28 @@
+{% if listing.closed != True and user.is_authenticated %}
+        <div>
+            <form id="comment-form" action="{% url 'auctions:listing_page' listing.id %}" method="POST" class="form-item">
+                {% csrf_token %}
+                <div class="form-item-row">
+                    <div class="col-sm-10 col-8">
+                        {{ comment_form }}
+                    </div>
+                    <input type="submit" name="comment-form" value="Comment" class="btn btn-primary btn-new-blue col-sm-2 col-4">
+                </div>
+            </form>
+        </div>
+        {% endif %}
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="list-group-item text-muted w-25 p-3">
+                    <div>
+                        <strong>Commenter:</strong> {{ comment.commenter }}
+                    </div>
+                    <div>
+                        <strong>Comment:</strong> {{ comment.comment }}
+                    </div>
+                    <div class="auction-list-date">
+                        <strong>Date:</strong> {{ comment.comment_date }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}

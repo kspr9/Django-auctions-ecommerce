@@ -118,16 +118,17 @@ def user_listings(request):
     user_listings = Listing.objects.filter(closed=False, seller=request.user.id).order_by("-publication_date").all()
 
     # get all listings sold by user
-    sold = []
+    sold_listings = Listing.objects.filter(closed=True, seller=request.user.id).order_by("-publication_date").all()
     # get all listings where user is currently bidding
-    bidding = []
+    # listing.bids.bidder == request.user
+    bidding_on_listing = Listing.objects.filter(closed=False, bids__bidder=request.user.id).distinct()
     # get all listings won by user
-    won = []
+    won = Listing.objects.filter(closed=True, winner=request.user.id).order_by("-publication_date").all()
     
     return render(request, "auctions/user_listings.html", {
         "selling": user_listings,
-        "sold": sold,
-        "bidding": bidding,
+        "sold": sold_listings,
+        "bidding": bidding_on_listing,
         "won": won,
     })
 

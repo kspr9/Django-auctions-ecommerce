@@ -5,7 +5,9 @@
         Hi {{ user.username }}! Here are all your listings. Click on a Listing to see more info or Create a new one.
     </div>
     
-    <a href="{% url 'auctions:add_listing' %}">Add a Listing</a>
+    <form action="{% url 'auctions:add_listing' %}">
+        <input type="submit" value="Add a listing" />
+    </form>
 
     {% if message %}
         <div><b><strong>{{ message }}</strong></b></div><br/>
